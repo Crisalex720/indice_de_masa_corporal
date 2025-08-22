@@ -6,13 +6,16 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['clave'])) {
 }
 include 'conexion.php';
 $conn = conectarDB($_SESSION['usuario'], $_SESSION['clave']);
-$resultado = @pg_query($conn, 'SELECT "NOMBRES", "APELLIDOS", "ESTADO" FROM datos_personales');
 
-if (!$resultado) {
-    // Si hay error de permisos, cierra sesión y redirige al login con error
-    session_destroy();
-    header("Location: login.php?error=2");
-    exit;
+$resultado = null;
+if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
+    $resultado = @pg_query($conn, 'SELECT "NOMBRES", "APELLIDOS", "ESTADO" FROM datos_personales');
+    if (!$resultado) {
+        // Si hay error de permisos, cierra sesión y redirige al login con error
+        session_destroy();
+        header("Location: login.php?error=2");
+        exit;
+    }
 }
 ?>
 
@@ -27,7 +30,7 @@ if (!$resultado) {
 <body>
     <div class="container">
     <div class="d-flex justify-content-end mt-3">
-        <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
+        <a href="logout.php" class="btn btn-danger">Cerrar sesión</a>
     </div>
     <?php if (isset($_GET['msg'])): ?>
             <?php if ($_GET['msg'] === 'campos'): ?>
@@ -45,6 +48,34 @@ if (!$resultado) {
                     <strong>Éxito:</strong> Los datos se guardaron correctamente.
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            <?php elseif ($_GET['msg'] === 'nodata'): ?>
+        <script>
+            window.onload = function() {
+                var alerta = document.createElement('div');
+                alerta.className = 'modal fade';
+                alerta.id = 'noDataModal';
+                alerta.tabIndex = -1;
+                alerta.innerHTML = `
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header bg-warning">
+                        <h5 class="modal-title">Cédula no encontrada</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>No existe una persona registrada con esa cédula.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(alerta);
+                var modal = new bootstrap.Modal(document.getElementById('noDataModal'));
+                modal.show();
+            }
+        </script>
             <?php endif; ?>
         <?php endif; ?>
         <h1 class="mb-4">Formulario de Inserción</h1>
@@ -88,12 +119,29 @@ if (!$resultado) {
                         <input type="number" class="form-control" id="altura" name="altura" step="0.01" min="0" max="3" placeholder="0.00m">
                     </div>
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button type="submit" class="btn btn-primary">Agregar</button>
-                </div>
-            </form>
+            <div class="row g-2 align-items-end">
+                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'crear'): ?>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-primary">Agregar</button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'actualizar'): ?>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-success">Actualizar</button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar'): ?>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </form>
         </div>
         <h2 class="mb-3">Registros</h2>
+        <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
         <table class="table table-striped">
             <thead class="table-dark">
                 <tr>
@@ -131,8 +179,11 @@ if (!$resultado) {
             <td class="fw-bold"><?= htmlspecialchars($fila["ESTADO"]) ?></td>
         </tr>
     <?php endwhile; ?>
-</tbody>
-        </table>
+    </tbody>
+</table>
+<?php else: ?>
+    <div class="alert alert-warning">No tienes permisos para visualizar los registros.</div>
+<?php endif; ?>
     </div>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['clave'])) {
     header("Location: login.php");
@@ -82,7 +85,7 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
         <div class="form-section">
             <form class="row g-2 align-items-end" action="procesar.php" method="POST">
                 <div class="row g-2 align-items-end">
-                    <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar' || $_SESSION['permiso' === 'leer']): ?>
+                    <?php if (isset($_SESSION['permiso']) && ($_SESSION['permiso'] === 'eliminar' || $_SESSION['permiso'] === 'leer')): ?>
                         <div class="col-md-4">
                             <label for="cedula" class="form-label">Cédula</label>
                             <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
@@ -125,19 +128,20 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
                 <div class="row g-2 align-items-end">
                     <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar'): ?>
                         <div class="col d-grid">
-                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                            <button type="submit" name="eliminar" class="btn btn-danger">Eliminar</button>
                         </div>
                     <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'crear'): ?>
                         <div class="col d-grid">
-                            <button type="submit" class="btn btn-primary">Agregar</button>
+                            <button type="submit" name="crear" class="btn btn-primary">Agregar</button>
                         </div>
                     <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'actualizar'): ?>
                         <div class="col d-grid">
-                            <button type="submit" class="btn btn-success">Actualizar</button>
+                            <button type="submit" name="actualizar" class="btn btn-success">Actualizar</button>
                         </div>
                     <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
                         <div class="col d-grid">
-                            <button type="submit" class="btn btn-secondary">Buscar</button>
+                            <button type="submit" name="leer" class="btn btn-secondary">Buscar</button>
+                        </div>
                     <?php endif; ?>
                 </div>
             </form>
@@ -153,34 +157,36 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
                 </tr>
             </thead>
             <tbody>
-    <?php while ($fila = pg_fetch_assoc($resultado)): ?>
-        <?php
-            // Asigna una clase según el estado
-            switch (strtolower($fila["ESTADO"])) {
-                case 'bajo peso':
-                    $clase = 'table-danger';
-                    break;
-                case 'normal':
-                    $clase = 'table-success';
-                    break;
-                case 'sobrepeso':
-                case 'obesidad leve':
-                case 'obesidad media':
-                    $clase = 'table-warning';
-                    break;
-                case 'obesidad morbida':
-                    $clase = 'table-danger';
-                    break;
-                default:
-                    $clase = '';
-            }
-        ?>
-        <tr class="<?= $clase ?>">
-            <td class="fw-bold"><?= htmlspecialchars($fila["NOMBRES"]) ?></td>
-            <td class="fw-bold"><?= htmlspecialchars($fila["APELLIDOS"]) ?></td>
-            <td class="fw-bold"><?= htmlspecialchars($fila["ESTADO"]) ?></td>
-        </tr>
-    <?php endwhile; ?>
+    <?php if ($resultado): ?>
+        <?php while ($fila = pg_fetch_assoc($resultado)): ?>
+            <?php
+                // Asigna una clase según el estado
+                switch (strtolower($fila["ESTADO"])) {
+                    case 'bajo peso':
+                        $clase = 'table-danger';
+                        break;
+                    case 'normal':
+                        $clase = 'table-success';
+                        break;
+                    case 'sobrepeso':
+                    case 'obesidad leve':
+                    case 'obesidad media':
+                        $clase = 'table-warning';
+                        break;
+                    case 'obesidad morbida':
+                        $clase = 'table-danger';
+                        break;
+                    default:
+                        $clase = '';
+                }
+            ?>
+            <tr class="<?= $clase ?>">
+                <td class="fw-bold"><?= htmlspecialchars($fila["NOMBRES"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["APELLIDOS"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["ESTADO"]) ?></td>
+            </tr>
+        <?php endwhile; ?>
+    <?php endif; ?>
     </tbody>
 </table>
 <?php else: ?>

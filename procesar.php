@@ -5,21 +5,24 @@ include 'conexion.php';
 $conn = conectarDB($_SESSION['usuario'], $_SESSION['clave']);
 
 if (isset($_POST['eliminar']) && $_SESSION['permiso'] === 'eliminar') {
-    $cedula = $_POST['cedula'];
+       $cedula = trim($_POST['cedula'] ?? '');
 
     // Validación básica
     if (!empty($cedula)) {
         $query = 'DELETE FROM datos_personales WHERE "CEDULA" = $1';
         $result = pg_query_params($conn, $query, [$cedula]);
-        if ($result) {
-            header("Location: index.php?msg=ok");
+        if ($result && pg_affected_rows($result) > 0) {
+            pg_close($conn);
+            header("Location: index.php?msg=eliminado");
             exit;
         } else {
+            pg_close($conn);
             // Si hay error en la consulta
-            header("Location: index.php?msg=db");
+            header("Location: index.php?msg=nodata");
             exit;
         }
     } else {
+        pg_close($conn);
         header("Location: index.php?msg=campos");
         exit;
     }
@@ -44,28 +47,24 @@ if (isset($_POST['actualizar']) && $_SESSION['permiso'] === 'actualizar') {
         is_numeric($altura) &&
         is_numeric($peso)
     ) {
-        // Verifica si existe la cédula
-        $check = pg_query_params($conn, 'SELECT 1 FROM datos_personales WHERE "CEDULA" = $1', [$cedula]);
-        if (pg_num_rows($check) > 0) {
             // Actualiza los datos
             $query = 'UPDATE datos_personales SET "NOMBRES"=$1, "APELLIDOS"=$2, "GENERO"=$3, "EDAD"=$4, "PESO"=$5, "ALTURA"=$6 WHERE "CEDULA"=$7';
             $result = pg_query_params($conn, $query, [$nombre, $apellido, $genero, $edad, $peso, $altura, $cedula]);
-            if ($result) {
+            if ($result && pg_affected_rows($result) > 0) {
+                pg_close($conn);
                 header("Location: index.php?msg=actualizado");
                 exit;
             } else {
-                header("Location: index.php?msg=db");
+                pg_close($conn);
+                header("Location: index.php?msg=nodata");
                 exit;
             }
         } else {
-            header("Location: index.php?msg=nodata");
+            pg_close($conn);
+            header("Location: index.php?msg=campos");
             exit;
         }
-    } else {
-        header("Location: index.php?msg=campos");
-        exit;
     }
-}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION['permiso'] === 'crear') {
     $cedula = trim($_POST['cedula'] ?? '');

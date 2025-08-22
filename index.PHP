@@ -1,12 +1,19 @@
 <?php
+session_start();
+if (!isset($_SESSION['usuario']) || !isset($_SESSION['clave'])) {
+    header("Location: login.php");
+    exit;
+}
 include 'conexion.php';
-$conn = conectarDB();
-$resultado = pg_query($conn, 'SELECT "NOMBRES", "APELLIDOS", "ESTADO" FROM datos_personales');
+$conn = conectarDB($_SESSION['usuario'], $_SESSION['clave']);
+$resultado = @pg_query($conn, 'SELECT "NOMBRES", "APELLIDOS", "ESTADO" FROM datos_personales');
 
 if (!$resultado) {
-    die("Error en la consulta: " . pg_last_error($conn));
+    // Si hay error de permisos, cierra sesión y redirige al login con error
+    session_destroy();
+    header("Location: login.php?error=2");
+    exit;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -19,7 +26,10 @@ if (!$resultado) {
 </head>
 <body>
     <div class="container">
-        <?php if (isset($_GET['msg'])): ?>
+    <div class="d-flex justify-content-end mt-3">
+        <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
+    </div>
+    <?php if (isset($_GET['msg'])): ?>
             <?php if ($_GET['msg'] === 'campos'): ?>
                 <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
                     <strong>Error:</strong> Debes completar todos los campos obligatorios del formulario.

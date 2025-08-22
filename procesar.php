@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     is_numeric($peso)
 ) {
     $conn = conectarDB();
-    $query = 'INSERT INTO datos_personales ("CEDULA", "NOMBRES", "APELLIDOS", "GENERO", "EDAD", "ALTURA", "PESO")
+    $query = 'INSERT INTO datos_personales ("CEDULA", "NOMBRES", "APELLIDOS ", "GENERO", "EDAD", "ALTURA", "PESO")
               VALUES ($1, $2, $3, $4, $5, $6, $7)';
     $result = pg_query_params($conn, $query, [
         $cedula,

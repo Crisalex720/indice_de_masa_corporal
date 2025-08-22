@@ -1,15 +1,11 @@
 <?php
-function conectarDB() {
+function conectarDB($usuario = null, $clave = null) {
     $host = "localhost";
     $port = "5432";
     $dbname = "masa_corporal";
-    $user = "postgres";
-    $password = "3142"; // Si tienes contraseña, colócala aquí
-
-    $conn = pg_connect("host=$host port=$port dbname=$dbname user=$user password=$password");
-
+    $conn = @pg_connect("host=$host port=$port dbname=$dbname user=$usuario password=$clave");
     if (!$conn) {
-        die("Error de conexión: " . pg_last_error());
+        return false; // No detener el script, solo retorna false
     }
     return $conn;
 }

@@ -82,63 +82,65 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
         <div class="form-section">
             <form class="row g-2 align-items-end" action="procesar.php" method="POST">
                 <div class="row g-2 align-items-end">
-                    <div class="col-md-6">
-                        <label for="nombre" class="form-label">Nombres</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required maxlength="30">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="apellido" class="form-label">Apellidos</label>
-                        <input type="text" class="form-control" id="apellido" name="apellido" required maxlength="30">
-                    </div>
+                    <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar' || $_SESSION['permiso' === 'leer']): ?>
+                        <div class="col-md-4">
+                            <label for="cedula" class="form-label">Cédula</label>
+                            <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
+                        </div>
+                    <?php else: ?>
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required maxlength="30">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellido" class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="apellido" name="apellido" required maxlength="30">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="cedula" class="form-label">Cédula</label>
+                            <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="genero" class="form-label">Género</label>
+                            <select class="form-select" id="genero" name="genero" required>
+                                <option value="0" selected disabled>Selecciona</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="edad" class="form-label">Edad</label>
+                            <input type="text" class="form-control" id="edad" name="edad" required maxlength="3" placeholder="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="peso" class="form-label">Peso</label>
+                            <input type="number" class="form-control" id="peso" name="peso" min="0" max="200" placeholder="0Kg">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="altura" class="form-label">Altura</label>
+                            <input type="number" class="form-control" id="altura" name="altura" step="0.01" min="0" max="3" placeholder="0.00m">
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div class="row g-2 align-items-end">
-                    <div class="col-md-4">
-                        <label for="cedula" class="form-label">Cédula</label>
-                        <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
-                    </div>
-                    <div class="col-md-3">
-                    <label for="genero" class="form-label">Género</label>
-                    <select class="form-select" id="genero" name="genero" required>
-                        <option value="0" selected disabled>Selecciona</option>
-                        <option value="masculino">Masculino</option>
-                        <option value="femenino">Femenino</option>
-                    </select>
+                    <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar'): ?>
+                        <div class="col d-grid">
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'crear'): ?>
+                        <div class="col d-grid">
+                            <button type="submit" class="btn btn-primary">Agregar</button>
+                        </div>
+                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'actualizar'): ?>
+                        <div class="col d-grid">
+                            <button type="submit" class="btn btn-success">Actualizar</button>
+                        </div>
+                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
+                        <div class="col d-grid">
+                            <button type="submit" class="btn btn-secondary">Buscar</button>
+                    <?php endif; ?>
                 </div>
-                </div>
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-2">
-                        <label for="edad" class="form-label">Edad</label>
-                        <input type="text" class="form-control" id="edad" name="edad" required maxlength="3" placeholder="0">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="peso" class="form-label">Peso</label>
-                        <input type="number" class="form-control" id="peso" name="peso" min="0" max="200" placeholder="0Kg">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="altura" class="form-label">Altura</label>
-                        <input type="number" class="form-control" id="altura" name="altura" step="0.01" min="0" max="3" placeholder="0.00m">
-                    </div>
-                </div>
-            <div class="row g-2 align-items-end">
-                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'crear'): ?>
-                    <div class="col d-grid">
-                        <button type="submit" class="btn btn-primary">Agregar</button>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'actualizar'): ?>
-                    <div class="col d-grid">
-                        <button type="submit" class="btn btn-success">Actualizar</button>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar'): ?>
-                    <div class="col d-grid">
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </form>
+            </form>
         </div>
         <h2 class="mb-3">Registros</h2>
         <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
@@ -189,4 +191,3 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

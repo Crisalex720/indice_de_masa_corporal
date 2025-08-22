@@ -15,6 +15,7 @@ if (isset($_POST['eliminar']) && $_SESSION['permiso'] === 'eliminar') {
             header("Location: index.php?msg=ok");
             exit;
         } else {
+            // Si hay error en la consulta
             header("Location: index.php?msg=db");
             exit;
         }
@@ -57,7 +58,6 @@ if (isset($_POST['actualizar']) && $_SESSION['permiso'] === 'actualizar') {
                 exit;
             }
         } else {
-            // No existe la cédula
             header("Location: index.php?msg=nodata");
             exit;
         }
@@ -67,7 +67,7 @@ if (isset($_POST['actualizar']) && $_SESSION['permiso'] === 'actualizar') {
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION['permiso'] === 'crear') {
     $cedula = trim($_POST['cedula'] ?? '');
     $nombre = trim($_POST['nombre'] ?? '');
     $apellido = trim($_POST['apellido'] ?? '');
@@ -77,26 +77,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $altura = isset($_POST['altura']) ? (float) $_POST['altura'] : 0;
 
     if (
-    !empty($cedula) &&
-    !empty($nombre) &&
-    !empty($apellido) &&
-    ($genero === "masculino" || $genero === "femenino") &&
-    is_numeric($edad) &&
-    is_numeric($altura) &&
-    is_numeric($peso)
-) {
-    $conn = conectarDB();
-    $query = 'INSERT INTO datos_personales ("CEDULA", "NOMBRES", "APELLIDOS ", "GENERO", "EDAD", "ALTURA", "PESO")
-              VALUES ($1, $2, $3, $4, $5, $6, $7)';
-    $result = pg_query_params($conn, $query, [
-        $cedula,
-        $nombre,
-        $apellido,
-        $genero,
-        $edad,
-        (float) $altura,
-        (float) $peso
-    ]);
+        !empty($cedula) &&
+        !empty($nombre) &&
+        !empty($apellido) &&
+        ($genero === "masculino" || $genero === "femenino") &&
+        is_numeric($edad) &&
+        is_numeric($altura) &&
+        is_numeric($peso)
+    ) {
+        $query = 'INSERT INTO datos_personales ("CEDULA", "NOMBRES", "APELLIDOS", "GENERO", "EDAD", "ALTURA", "PESO")
+                  VALUES ($1, $2, $3, $4, $5, $6, $7)';
+        $result = pg_query_params($conn, $query, [
+            $cedula,
+            $nombre,
+            $apellido,
+            $genero,
+            $edad,
+            (float) $altura,
+            (float) $peso
+        ]);
 
         if ($result) {
             pg_close($conn); // 🔹 Cerramos la conexión aquí
@@ -107,12 +106,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             pg_close($conn); // 🔹 Cerramos la conexión también en caso de error
             exit;
         }
-
     } else {
         pg_close($conn); // Si abriste la conexión antes, ciérrala aquí también
         header("Location: index.php?msg=campos");
         exit;
-
     }
 }
 ?>

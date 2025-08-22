@@ -1,7 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['clave'])) {
     header("Location: login.php");
@@ -12,14 +9,30 @@ $conn = conectarDB($_SESSION['usuario'], $_SESSION['clave']);
 
 $resultado = null;
 if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
-    $resultado = @pg_query($conn, 'SELECT "NOMBRES", "APELLIDOS", "ESTADO" FROM datos_personales');
-    if (!$resultado) {
-        // Si hay error de permisos, cierra sesión y redirige al login con error
-        session_destroy();
-        header("Location: login.php?error=2");
-        exit;
+
+    // Verificar si viene cédula por GET
+    $cedulaBuscar = $_GET['cedula'] ?? '';
+
+    if (!empty($cedulaBuscar)) {
+        $query = 'SELECT "CEDULA", "NOMBRES", "APELLIDOS", "GENERO", "EDAD", "ALTURA", "PESO", "ESTADO", "INDICE" FROM datos_personales WHERE "CEDULA" = $1';
+        $resultado = pg_query_params($conn, $query, [$cedulaBuscar]);
+
+        if (!$resultado || pg_num_rows($resultado) === 0) {
+            header("Location: index.php?msg=nodata");
+            exit;
+        }
+
+    } else {
+        // Si no hay búsqueda, mostrar todo
+        $resultado = @pg_query($conn, 'SELECT "CEDULA", "NOMBRES", "APELLIDOS", "GENERO", "EDAD", "ALTURA", "PESO", "ESTADO", "INDICE" FROM datos_personales');
+        if (!$resultado) {
+            session_destroy();
+            header("Location: login.php?error=2");
+            exit;
+        }
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -81,79 +94,102 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
         </script>
             <?php endif; ?>
         <?php endif; ?>
-        <h1 class="mb-4">Formulario de Inserción</h1>
-        <div class="form-section">
-            <form class="row g-2 align-items-end" action="procesar.php" method="POST">
-                <div class="row g-2 align-items-end">
-                    <?php if (isset($_SESSION['permiso']) && ($_SESSION['permiso'] === 'eliminar' || $_SESSION['permiso'] === 'leer')): ?>
-                        <div class="col-md-4">
-                            <label for="cedula" class="form-label">Cédula</label>
-                            <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
-                        </div>
-                    <?php else: ?>
-                        <div class="col-md-6">
-                            <label for="nombre" class="form-label">Nombres</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required maxlength="30">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="apellido" class="form-label">Apellidos</label>
-                            <input type="text" class="form-control" id="apellido" name="apellido" required maxlength="30">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="cedula" class="form-label">Cédula</label>
-                            <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="genero" class="form-label">Género</label>
-                            <select class="form-select" id="genero" name="genero" required>
-                                <option value="0" selected disabled>Selecciona</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="femenino">Femenino</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="edad" class="form-label">Edad</label>
-                            <input type="text" class="form-control" id="edad" name="edad" required maxlength="3" placeholder="0">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="peso" class="form-label">Peso</label>
-                            <input type="number" class="form-control" id="peso" name="peso" min="0" max="200" placeholder="0Kg">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="altura" class="form-label">Altura</label>
-                            <input type="number" class="form-control" id="altura" name="altura" step="0.01" min="0" max="3" placeholder="0.00m">
-                        </div>
-                    <?php endif; ?>
-                </div>
-                <div class="row g-2 align-items-end">
-                    <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'eliminar'): ?>
-                        <div class="col d-grid">
-                            <button type="submit" name="eliminar" class="btn btn-danger">Eliminar</button>
-                        </div>
-                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'crear'): ?>
-                        <div class="col d-grid">
-                            <button type="submit" name="crear" class="btn btn-primary">Agregar</button>
-                        </div>
-                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'actualizar'): ?>
-                        <div class="col d-grid">
-                            <button type="submit" name="actualizar" class="btn btn-success">Actualizar</button>
-                        </div>
-                    <?php elseif (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
-                        <div class="col d-grid">
-                            <button type="submit" name="leer" class="btn btn-secondary">Buscar</button>
-                        </div>
-                    <?php endif; ?>
+            <?php if ($_SESSION['permiso'] !== 'leer'): ?>
+            <h1 class="mb-4">Formulario de Inserción</h1>
+            <div class="form-section">
+                <form class="row g-2 align-items-end" action="procesar.php" method="POST">
+                    <div class="row g-2 align-items-end">
+                        <?php if ($_SESSION['permiso'] === 'eliminar'): ?>
+                            <div class="col-md-4">
+                                <label for="cedula" class="form-label">Cédula</label>
+                                <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
+                            </div>
+                        <?php else: ?>
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label">Nombres</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required maxlength="30">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="apellido" class="form-label">Apellidos</label>
+                                <input type="text" class="form-control" id="apellido" name="apellido" required maxlength="30">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="cedula" class="form-label">Cédula</label>
+                                <input type="text" class="form-control" id="cedula" name="cedula" required maxlength="20">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="genero" class="form-label">Género</label>
+                                <select class="form-select" id="genero" name="genero" required>
+                                    <option value="0" selected disabled>Selecciona</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="femenino">Femenino</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label for="edad" class="form-label">Edad</label>
+                                <input type="text" class="form-control" id="edad" name="edad" required maxlength="3" placeholder="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="peso" class="form-label">Peso</label>
+                                <input type="number" class="form-control" id="peso" name="peso" min="0" max="200" placeholder="0Kg">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="altura" class="form-label">Altura</label>
+                                <input type="number" class="form-control" id="altura" name="altura" step="0.01" min="0" max="3" placeholder="0.00m">
+                            </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="row g-2 align-items-end">
+                        <?php if ($_SESSION['permiso'] === 'eliminar'): ?>
+                            <div class="col d-grid">
+                                <button type="submit" name="eliminar" class="btn btn-danger">Eliminar</button>
+                            </div>
+                        <?php elseif ($_SESSION['permiso'] === 'crear'): ?>
+                            <div class="col d-grid">
+                                <button type="submit" name="crear" class="btn btn-primary">Agregar</button>
+                            </div>
+                        <?php elseif ($_SESSION['permiso'] === 'actualizar'): ?>
+                            <div class="col d-grid">
+                                <button type="submit" name="actualizar" class="btn btn-success">Actualizar</button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
+        <?php endif; ?>
+
                 </div>
             </form>
         </div>
+        <div class="container">
         <h2 class="mb-3">Registros</h2>
-        <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
+            <?php if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer'): ?>
+            <form class="row g-2 mb-3" method="GET" action="">
+                <div class="col-md-4">
+                    <input type="text" name="cedula" class="form-control" placeholder="Digite cédula" 
+                        value="<?= htmlspecialchars($_GET['cedula'] ?? '') ?>">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-secondary">Buscar</button>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <a href="index.php" class="btn btn-dark">Limpiar</a>
+                </div>
+            </form>
         <table class="table table-striped">
             <thead class="table-dark">
                 <tr>
+                    <th>CEDULA</th>
                     <th>NOMBRE</th>
                     <th>APELLIDO</th>
+                    <th>GENERO</th>
+                    <th>EDAD</th>
+                    <th>ALTURA</th>
+                    <th>PESO</th>
                     <th>ESTADO</th>
+                    <th>INDICE</th>
                 </tr>
             </thead>
             <tbody>
@@ -181,9 +217,15 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
                 }
             ?>
             <tr class="<?= $clase ?>">
+                <td class="fw-bold"><?= htmlspecialchars($fila["CEDULA"]) ?></td>
                 <td class="fw-bold"><?= htmlspecialchars($fila["NOMBRES"]) ?></td>
                 <td class="fw-bold"><?= htmlspecialchars($fila["APELLIDOS"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["GENERO"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["EDAD"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["ALTURA"]) ?> </td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["PESO"]) ?> </td>
                 <td class="fw-bold"><?= htmlspecialchars($fila["ESTADO"]) ?></td>
+                <td class="fw-bold"><?= htmlspecialchars($fila["INDICE"]) ?></td>
             </tr>
         <?php endwhile; ?>
     <?php endif; ?>
@@ -192,6 +234,7 @@ if (isset($_SESSION['permiso']) && $_SESSION['permiso'] === 'leer') {
 <?php else: ?>
     <div class="alert alert-warning">No tienes permisos para visualizar los registros.</div>
 <?php endif; ?>
+    </div>
     </div>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
